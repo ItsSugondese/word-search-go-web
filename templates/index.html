@@ -8,13 +8,165 @@
 
 
 </head>
-<body>
-<h1 class="text-3xl font-bold underline">Hello from HTMX + Gin</h1>
 
-<button class="bg-blue-200 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-    Get Current Time
-</button>
+<body class="bg-gray-900 flex flex-col items-center justify-center min-h-screen p-4">
 
-<div id="time-div" style="margin-top: 1rem; font-weight: bold;"></div>
+<div class="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
+    <div class="w-full max-w-xs mx-auto mt-10">
+        <label for="translation-direction" class="block mb-2 text-sm font-medium text-gray-900">Choose direction:</label>
+        <select id="translation-direction" class="block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <option value="de-en">German to English</option>
+            <option value="en-de">English to German</option>
+        </select>
+    </div>
+
+    <label for="search" class="block text-lg font-semibold mt-10 mb-2 text-gray-900">Search</label>
+    <div class="flex">
+        <div>
+
+
+            <input
+                    id="search"
+                    type="text"
+                    placeholder="Type something..."
+                    class="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            <ul id="autocomplete-list" class="max-w-md border border-gray-300 rounded mt-1 bg-white shadow-lg"></ul>
+
+
+        </div>
+        <button
+                id="fetchWordsBtn"
+                class=" ml-2 px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+            Fetch
+        </button>
+    </div>
+
+    <h2 class="mt-6 text-2xl font-bold text-blue-700" id="reflection">Your search will appear here</h2>
+</div>
+
+<script>
+    function updateReflection() {
+        const input = document.getElementById('search').value;
+        const reflection = document.getElementById('reflection');
+        reflection.textContent = input || 'Your search will appear here';
+    }
+
+    document.getElementById("fetchWordsBtn").addEventListener("click", () => {
+        fetch("/words")
+            .then(res => res.json())
+            .then(data => {
+                localStorage.setItem("allWords", JSON.stringify(data));
+                console.log("Stored allWords in localStorage:", data);
+            })
+            .catch(err => console.error("Failed to fetch words:", err));
+    });
+
+    const delimiter = "|";
+
+    // Get the List<String> from localStorage (stored as JSON array)
+    const allWords = JSON.parse(localStorage.getItem("allWords") || "[]");
+
+    // Initialize your maps as plain JS objects
+    const genericValueGermanMap = {};
+    const genericValueEnglishMap = {};
+
+    // Process each entry like your Java parallelStream forEach
+    allWords.forEach(e => {
+        const splittedWord = e.split(delimiter);
+        if (splittedWord.length >= 2) {
+            const german = splittedWord[0].trim();
+            const english = splittedWord[1].trim();
+
+            genericValueGermanMap[german] = english;
+            genericValueEnglishMap[english] = german;
+        }
+    });
+
+    console.log("German -> English:", genericValueGermanMap);
+    console.log("English -> German:", genericValueEnglishMap);
+    const dropdown = document.getElementById('translation-direction');
+
+    dropdown.addEventListener('change', () => {
+        const selected = dropdown.value;
+        if (selected === 'de-en') {
+            words = Object.keys(genericValueGermanMap);
+            // Perform your German to English logic here
+        } else if (selected === 'en-de') {
+            words = Object.keys(genericValueEnglishMap);
+        }
+    });
+
+
+    let words = Object.keys(genericValueGermanMap);
+
+    function normalizeUmlauts(str) {
+        return str
+            .toLowerCase()
+            .replace(/ä/g, "ae")
+            .replace(/ö/g, "oe")
+            .replace(/ü/g, "ue")
+            .replace(/ß/g, "ss");
+    }
+
+    const input = document.getElementById("search");
+    const list = document.getElementById("autocomplete-list");
+
+    input.addEventListener("input", () => {
+        const val = input.value.trim().toLowerCase();
+        const normalizedVal = normalizeUmlauts(val);
+
+        // Clear previous suggestions
+        list.innerHTML = "";
+
+        if (!val) return; // No input, no suggestions
+
+        // Filter words where original or normalized matches input
+        const filtered = words.filter(word => {
+            const normWord = normalizeUmlauts(word);
+            return word.toLowerCase().includes(val) || normWord.includes(normalizedVal);
+        });
+
+        // Create suggestion items
+        filtered.forEach(word => {
+            const item = document.createElement("li");
+            item.textContent = word;
+            item.className = "p-2 hover:bg-blue-500 hover:text-white cursor-pointer";
+
+            // On click, fill input and clear suggestions
+            item.addEventListener("click", () => {
+                const selectedDirection = dropdown.value; // "de-en" or "en-de"
+                console.log("Selected direction:", selectedDirection);
+
+                if (selectedDirection === "de-en") {
+                    document.getElementById('reflection').textContent = genericValueGermanMap[word];
+
+                    // handle German to English selection
+                } else if (selectedDirection === "en-de") {
+                    document.getElementById('reflection').textContent = genericValueEnglishMap[word];
+                    // handle English to German selection
+                }
+
+                input.value = word;
+                list.innerHTML = "";
+            });
+
+            list.appendChild(item);
+        });
+    });
+
+    // Optional: Hide suggestions if click outside
+    document.addEventListener("click", e => {
+        if (e.target !== input) {
+            list.innerHTML = "";
+        }
+    });
+
+
+
+</script>
+
 </body>
 </html>
