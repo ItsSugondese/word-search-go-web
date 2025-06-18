@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"word-meaning-finder/constants/file_path_constants_method"
-	file_utils "word-meaning-finder/pkg/utils/file_utils"
+	file_utils "word-meaning-finder/pkg/utils/file-utils"
 )
 
 func testMain() {

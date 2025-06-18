@@ -16,7 +16,6 @@
 
 # Go build cache
 /bin/
-/pkg/
 
 # IDE/editor config files
 .vscode/
