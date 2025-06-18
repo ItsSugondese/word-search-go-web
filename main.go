@@ -8,7 +8,7 @@ import (
 	"os"
 	"word-meaning-finder/config"
 	"word-meaning-finder/constants/file_path_constants_method"
-	file_utils "word-meaning-finder/pkg/utils/file-utils"
+	file_utils "word-meaning-finder/pkg/utils/file_utils"
 )
 
 // init method runs before the main method so that the environment variables are loaded before the application starts
